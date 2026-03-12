@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Movie List - Q4 Exercise (Add/Update/Delete)</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f8f9fa;
+      color: #333;
+    }
+
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    .form-container {
+      background: white;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 40px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    input[type="number"] {
+      width: 140px;
+    }
+
+    .rating-stars {
+      font-size: 32px;
+      cursor: pointer;
+      user-select: none;
+      letter-spacing: 3px;
+    }
+
+    .star {
+      color: #ddd;
+      transition: color 0.15s;
+    }
+
+    .star.active {
+      color: #f1c40f;
+    }
+
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 16px;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    .movie-list {
+      background: white;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .movie-item {
+      padding: 16px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .movie-item:last-child {
+      border-bottom: none;
+    }
+
+    .movie-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .movie-title {
+      font-weight: 600;
+      font-size: 1.18rem;
+      color: #2c3e50;
+      margin-bottom: 0.3rem;
+    }
+
+    .movie-info {
+      color: #555;
+      font-size: 1rem;
+    }
+
+    .movie-rating {
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+    }
+
+    .delete-btn {
+        background: #fff;
+        color: #e74c3c;
+        border: 1px solid #e74c3c;
+        border-radius: 10%;
+        width: 30px;                 
+        height: 30px;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all 0.15s;
+    }
+
+    .delete-btn:hover {
+        background: #e74c3c;
+        color: white;
+        transform: scale(1.12);
+    }
+
+    .delete-btn:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="form-container">
+    <h2>Add / Update a Movie Rating</h2>
+
+    <form id="movieForm">
+      <div class="form-group">
+        <label for="title">Title:</label>
+        <input type="text" id="title" required placeholder="e.g. Top Gun: Maverick"/>
+      </div>
+
+      <div class="form-group">
+        <label for="year">Year:</label>
+        <input type="number" id="year" min="1888" max="2026" required placeholder="2024"/>
+      </div>
+
+      <div class="form-group">
+        <label for="genre">Genre:</label>
+        <select id="genre" required>
+          <option value="" disabled selected>Select genre</option>
+          <option value="Action">Action</option>
+          <option value="Adventure">Adventure</option>
+          <option value="Animation">Animation</option>
+          <option value="Comedy">Comedy</option>
+          <option value="Crime">Crime</option>
+          <option value="Drama">Drama</option>
+          <option value="Fantasy">Fantasy</option>
+          <option value="Horror">Horror</option>
+          <option value="Mystery">Mystery</option>
+          <option value="Romance">Romance</option>
+          <option value="Sci-Fi">Sci-Fi</option>
+          <option value="Thriller">Thriller</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Rating:</label>
+        <div class="rating-stars" id="ratingStars">
+          <span class="star" data-value="1">★</span>
+          <span class="star" data-value="2">★</span>
+          <span class="star" data-value="3">★</span>
+          <span class="star" data-value="4">★</span>
+          <span class="star" data-value="5">★</span>
+        </div>
+        <input type="hidden" id="rating" value="0" required/>
+      </div>
+
+      <button type="submit">Add / Update Movie</button>
+    </form>
+  </div>
+
+  <div class="movie-list">
+    <h2>Movie List</h2>
+    <div id="moviesContainer"></div>
+  </div>
+  
+
+  <script>
+    let movies = [];
+    let selectedRating = 0;
+
+    const form = document.getElementById('movieForm');
+    const titleInput = document.getElementById('title');
+    const yearInput = document.getElementById('year');
+    const genreSelect = document.getElementById('genre');
+    const ratingInput = document.getElementById('rating');
+    const stars = document.querySelectorAll('#ratingStars .star');
+    const container = document.getElementById('moviesContainer');
+
+    function updateFormStars(rating) {
+      stars.forEach(star => {
+        star.classList.toggle('active', parseInt(star.dataset.value) <= rating);
+      });
+    }
+
+    stars.forEach(star => {
+      star.addEventListener('click', () => {
+        selectedRating = parseInt(star.dataset.value);
+        ratingInput.value = selectedRating;
+        updateFormStars(selectedRating);
+      });
+    });
+
+    function renderMovies() {
+    container.innerHTML = '';
+
+    if (movies.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#777; padding:2rem 0;">No movies added yet.</p>';
+        return;
+    }
+
+    movies.forEach((movie, index) => {
+        const avgRating = Math.round(
+        movie.ratings.reduce((sum, r) => sum + r, 0) / movie.ratings.length
+        );
+
+        const item = document.createElement('div');
+        item.className = 'movie-item';
+
+        item.innerHTML = `
+        <div class="movie-content">
+            <div class="movie-title">${movie.title}</div>
+            <div class="movie-info">
+            ${movie.year} – ${movie.genre}, 
+            Rating: <span class="movie-rating">${'★'.repeat(avgRating)}${'☆'.repeat(5 - avgRating)}</span>
+            <small style="color:#777;">(${movie.ratings.length} rating${movie.ratings.length === 1 ? '' : 's'})</small>
+            </div>
+        </div>
+        <button class="delete-btn" data-index="${index}" title="Delete movie">×</button>
+        `;
+
+        container.appendChild(item);
+    });
+    }
+
+    form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const title = titleInput.value.trim();
+    const year = yearInput.value.trim();
+    const genre = genreSelect.value;
+    const newRating = parseInt(ratingInput.value);
+
+    if (!title || !year || !genre || newRating === 0) {
+        alert('Please fill in all fields and select a rating.');
+        return;
+    }
+
+    const existingIndex = movies.findIndex(m => 
+        m.title.toLowerCase() === title.toLowerCase()
+    );
+
+    if (existingIndex !== -1) {
+        const movie = movies[existingIndex];
+        movie.ratings.push(newRating);           
+        movie.year = year;                       
+        movie.genre = genre;
+
+        const avg = Math.round(
+        movie.ratings.reduce((sum, r) => sum + r, 0) / movie.ratings.length
+        );
+
+        alert(`"${title}" updated!\nNew average rating: ${avg} ★ (based on ${movie.ratings.length} ratings)`);
+    } else {
+        movies.push({
+        title,
+        year,
+        genre,
+        ratings: [newRating]                 
+        });
+    }
+
+    form.reset();
+    selectedRating = 0;
+    updateFormStars(0);
+    ratingInput.value = "0";
+
+    renderMovies();
+    });
+    renderMovies();
+  </script>
+
+</body>
+</html>
